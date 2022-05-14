@@ -27,6 +27,9 @@ public class Pokemon implements Serializable {
     private Integer weight;
     @JsonProperty("base-experience")
     private Integer baseExperience;
+    @ElementCollection // 1
+    @CollectionTable(name = "pokemon_types", joinColumns = @JoinColumn(name = "id"))
+    @OrderColumn(name = "slot")
     private int[] types;
     @JsonIgnore
     private Blob img;
