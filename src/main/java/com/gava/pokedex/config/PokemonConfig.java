@@ -2,6 +2,7 @@ package com.gava.pokedex.config;
 
 import com.gava.pokedex.domain.Pokemon;
 import com.gava.pokedex.domain.PokemonStats;
+import com.gava.pokedex.domain.enums.Type;
 import com.gava.pokedex.repositories.PokemonRepository;
 import io.netty.handler.timeout.ReadTimeoutException;
 import org.json.JSONArray;
@@ -37,7 +38,7 @@ public class PokemonConfig implements CommandLineRunner {
         if (pokemonRepository.findAll().isEmpty() == true) {
             List<Pokemon> pokemonsList = new ArrayList<>();
 
-            for (int i = 1; i <= 151; i++) {
+            for (int i = 1; i <= 10; i++) {
                 Pokemon pokemon = new Pokemon();
 
                 // Recebe o JSON completo
@@ -53,7 +54,20 @@ public class PokemonConfig implements CommandLineRunner {
                 JSONObject jsonObj = new JSONObject(mono.share().block());
 
                 // Adiciona as informações à classe Pokemon
-                pokemon.setName(jsonObj.getString("name"));
+                pokemon.setName(capitalize(jsonObj.getString("name")));
+                pokemon.setHeight(jsonObj.getInt("height"));
+                pokemon.setWeight(jsonObj.getInt("weight"));
+                pokemon.setBaseExperience(jsonObj.getInt("base_experience"));
+
+                // Adiciona os Types à classe Pokemon
+                JSONArray typesArray = jsonObj.getJSONArray("types");
+                int[] types = new int[typesArray.length()];
+                for (int j = 0; j < typesArray.length(); j++) {
+                    JSONObject jsonTypes = (JSONObject) typesArray.get(j);
+                    Type type = Type.valueOf(jsonTypes.getJSONObject("type").getString("name").toUpperCase());
+                    types[j] = type.getCode();
+                }
+                pokemon.setTypes(types);
 
                 // Captura imagem SVG como String
                 Mono<String> svg = webClient
@@ -76,6 +90,7 @@ public class PokemonConfig implements CommandLineRunner {
 
                 // Adiciona os Stats à classe Pokemon
                 JSONArray statsArray = jsonObj.getJSONArray("stats");
+
                 PokemonStats stats = new PokemonStats(
                         getBaseStat(statsArray, 0),
                         getBaseStat(statsArray, 1),
@@ -96,5 +111,12 @@ public class PokemonConfig implements CommandLineRunner {
     private static int getBaseStat(JSONArray statsArray, int index) {
         JSONObject baseStat = (JSONObject) statsArray.get(index);
         return baseStat.getInt("base_stat");
+    }
+
+    private static String capitalize(String str) {
+        if(str == null || str.isEmpty()) {
+            return str;
+        }
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 }
