@@ -8,6 +8,7 @@ import io.netty.handler.timeout.ReadTimeoutException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,11 +27,17 @@ import java.util.List;
 @Configuration
 public class PokemonConfig implements CommandLineRunner {
 
+    @Value("${pokedex-onboarding-limit-number}")
+    private int limit;
+
     @Autowired
     PokemonRepository pokemonRepository;
 
     @Autowired
-    WebClient webClient;
+    WebClient webClient1;
+
+    @Autowired
+    WebClient webClient2;
 
     @Override
     public void run(String... args) throws Exception {
@@ -38,11 +45,11 @@ public class PokemonConfig implements CommandLineRunner {
         if (pokemonRepository.findAll().isEmpty() == true) {
             List<Pokemon> pokemonsList = new ArrayList<>();
 
-            for (int i = 1; i <= 10; i++) {
+            for (int i = 1; i <= limit; i++) {
                 Pokemon pokemon = new Pokemon();
 
-                // Recebe o JSON completo
-                Mono<String> mono = webClient
+                // Começa a captura do JSON do Pokemon
+                Mono<String> pokemonMono = webClient1
                         .method(HttpMethod.GET)
                         .uri("https://pokeapi.co/api/v2/pokemon/" + i)
                         .accept(MediaType.APPLICATION_JSON)
@@ -51,28 +58,37 @@ public class PokemonConfig implements CommandLineRunner {
                         .timeout(Duration.ofSeconds(10))
                         .onErrorMap(ReadTimeoutException.class, ex -> new HttpTimeoutException("ReadTimeout"));
 
-                JSONObject jsonObj = new JSONObject(mono.share().block());
+                // Começa a captura do JSON da espécie do Pokemon
+                Mono<String> speciesMono = webClient2
+                        .method(HttpMethod.GET)
+                        .uri("https://pokeapi.co/api/v2/pokemon-species/" + i)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .timeout(Duration.ofSeconds(10))
+                        .onErrorMap(ReadTimeoutException.class, ex -> new HttpTimeoutException("ReadTimeout"));
+
+                // Bloqueia e finaliza a captura do JSON do Pokemon
+                JSONObject pokemonJsonObj = new JSONObject(pokemonMono.share().block());
 
                 // Adiciona as informações à classe Pokemon
-                pokemon.setName(capitalize(jsonObj.getString("name")));
-                pokemon.setHeight(jsonObj.getInt("height"));
-                pokemon.setWeight(jsonObj.getInt("weight"));
-                pokemon.setBaseExperience(jsonObj.getInt("base_experience"));
+                pokemon.setName(capitalize(pokemonJsonObj.getString("name")));
+                pokemon.setHeight(pokemonJsonObj.getInt("height"));
+                pokemon.setWeight(pokemonJsonObj.getInt("weight"));
+                pokemon.setBaseExperience(pokemonJsonObj.getInt("base_experience"));
 
                 // Adiciona os Types à classe Pokemon
-                JSONArray typesArray = jsonObj.getJSONArray("types");
-                int[] types = new int[typesArray.length()];
-                for (int j = 0; j < typesArray.length(); j++) {
-                    JSONObject jsonTypes = (JSONObject) typesArray.get(j);
+                JSONArray typesArray = pokemonJsonObj.getJSONArray("types");
+                for (Object obj : typesArray) {
+                    JSONObject jsonTypes = (JSONObject) obj;
                     Type type = Type.valueOf(jsonTypes.getJSONObject("type").getString("name").toUpperCase());
-                    types[j] = type.getCode();
+                    pokemon.addType(type);
                 }
-                pokemon.setTypes(types);
 
-                // Captura imagem SVG como String
-                Mono<String> svg = webClient
+                // Começa a captura da imagem SVG do Pokemon como String
+                Mono<String> svg = webClient1
                         .method(HttpMethod.GET)
-                        .uri(jsonObj
+                        .uri(pokemonJsonObj
                                 .getJSONObject("sprites")
                                 .getJSONObject("other")
                                 .getJSONObject("dream_world")
@@ -84,37 +100,57 @@ public class PokemonConfig implements CommandLineRunner {
                         .timeout(Duration.ofSeconds(10))
                         .onErrorMap(ReadTimeoutException.class, ex -> new HttpTimeoutException("ReadTimeout"));
 
+                // Bloqueia e finaliza a captura do JSON da espécie do Pokemon
+                JSONObject speciesJsonObj = new JSONObject(speciesMono.share().block());
+
+                // Adiciona as informações da espécie à classe Pokemon
+                pokemon.setColor(speciesJsonObj.getJSONObject("color").getString("name"));
+                pokemon.setGenus(getObjects(speciesJsonObj.getJSONArray("genera"), 7).getString("genus"));
+
+                JSONArray flavorArray = speciesJsonObj.getJSONArray("flavor_text_entries");
+
+                for (int j = flavorArray.length() - 1; j >= 0; j--) {
+                    JSONObject jsonFlavor = getObjects(flavorArray, j);
+                    if (jsonFlavor.getJSONObject("language").getString("name").equals("en")) {
+                        pokemon.setFlavorText(jsonFlavor.getString("flavor_text"));
+                        break;
+                    }
+                }
+
+                // Bloqueia e finaliza a captura da imagem SVG como String
                 pokemon.setImg(new SerialBlob(svg.share().block().getBytes(StandardCharsets.UTF_8)));
 
+                // Salva a classe Pokemon para criar um ID no repositório
                 pokemonRepository.save(pokemon);
 
-                // Adiciona os Stats à classe Pokemon
-                JSONArray statsArray = jsonObj.getJSONArray("stats");
+                // Adiciona os Stats à classe PokemonStats
+                JSONArray statsArray = pokemonJsonObj.getJSONArray("stats");
 
                 PokemonStats stats = new PokemonStats(
-                        getBaseStat(statsArray, 0),
-                        getBaseStat(statsArray, 1),
-                        getBaseStat(statsArray, 2),
-                        getBaseStat(statsArray, 3),
-                        getBaseStat(statsArray, 4),
-                        getBaseStat(statsArray, 5),
+                        getObjects(statsArray, 0).getInt("base_stat"),
+                        getObjects(statsArray, 1).getInt("base_stat"),
+                        getObjects(statsArray, 2).getInt("base_stat"),
+                        getObjects(statsArray, 3).getInt("base_stat"),
+                        getObjects(statsArray, 4).getInt("base_stat"),
+                        getObjects(statsArray, 5).getInt("base_stat"),
                         pokemon
                 );
 
+                // Adiciona os stats à classe Pokemon
                 pokemon.setStats(stats);
 
+                // Salva novamente ao repositório o conteúdo completo
                 pokemonRepository.save(pokemon);
             }
         }
     }
 
-    private static int getBaseStat(JSONArray statsArray, int index) {
-        JSONObject baseStat = (JSONObject) statsArray.get(index);
-        return baseStat.getInt("base_stat");
+    private static JSONObject getObjects(JSONArray array, int index) {
+        return (JSONObject) array.get(index);
     }
 
     private static String capitalize(String str) {
-        if(str == null || str.isEmpty()) {
+        if (str == null || str.isEmpty()) {
             return str;
         }
         return str.substring(0, 1).toUpperCase() + str.substring(1);

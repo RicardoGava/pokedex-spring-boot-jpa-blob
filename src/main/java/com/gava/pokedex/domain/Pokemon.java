@@ -8,6 +8,10 @@ import lombok.*;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Blob;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -25,22 +29,22 @@ public class Pokemon implements Serializable {
     private String name;
     private Integer height;
     private Integer weight;
+    private String color;
+    private String genus;
     @JsonProperty("base-experience")
     private Integer baseExperience;
-    @ElementCollection // 1
-    @CollectionTable(name = "pokemon_types", joinColumns = @JoinColumn(name = "id"))
-    @OrderColumn(name = "slot")
-    private int[] types;
+    @Setter(AccessLevel.NONE)
+    @ElementCollection
+    @CollectionTable(joinColumns = @JoinColumn(name = "id"))
+    private Set<Type> types = new LinkedHashSet<>();
+    @JsonProperty("flavor-text")
+    private String flavorText;
     @JsonIgnore
     private Blob img;
     @OneToOne(mappedBy = "pokemon", cascade = CascadeType.ALL)
     private PokemonStats stats;
 
-    public Type[] getTypes() {
-        Type[] types = new Type[this.types.length];
-        for (int i = 0; i < types.length; i++) {
-            types[i] = Type.valueOf(this.types[i]);
-        }
-        return types;
+    public void addType(Type type) {
+        types.add(type);
     }
 }
