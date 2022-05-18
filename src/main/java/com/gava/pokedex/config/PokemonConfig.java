@@ -72,8 +72,8 @@ public class PokemonConfig implements CommandLineRunner {
 
                 // Adiciona as informações à classe Pokemon
                 pokemon.setName(capitalize(pokemonJsonObj.getString("name")));
-                pokemon.setHeight(pokemonJsonObj.getInt("height")/10d);
-                pokemon.setWeight(pokemonJsonObj.getInt("weight")/10d);
+                pokemon.setHeight(pokemonJsonObj.getInt("height") / 10d);
+                pokemon.setWeight(pokemonJsonObj.getInt("weight") / 10d);
 
                 // Adiciona os Types à classe Pokemon
                 JSONArray typesArray = pokemonJsonObj.getJSONArray("types");
@@ -110,13 +110,23 @@ public class PokemonConfig implements CommandLineRunner {
                 pokemonSpecies.setCaptureRate(speciesJsonObj.getInt("capture_rate"));
                 pokemonSpecies.setColor(speciesJsonObj.getJSONObject("color").getString("name"));
                 pokemonSpecies.setShape(speciesJsonObj.getJSONObject("shape").getString("name"));
-                pokemonSpecies.setGenus(getObjects(speciesJsonObj.getJSONArray("genera"), 7).getString("genus"));
-                try {
-                    pokemonSpecies.setEvolvesFrom(speciesJsonObj.getJSONObject("evolves_from_species").getString("name"));
-                } finally {}
-                pokemonSpecies.setPokemon(pokemon);
-                JSONArray flavorArray = speciesJsonObj.getJSONArray("flavor_text_entries");
+                pokemonSpecies.setGenus(getObjects(speciesJsonObj
+                        .getJSONArray("genera"), 7).getString("genus"));
 
+                if (!speciesJsonObj.get("evolves_from_species").equals(null)) {
+                    pokemonSpecies.setEvolvesFrom(capitalize(speciesJsonObj
+                            .getJSONObject("evolves_from_species").getString("name")));
+                }
+
+                Mono<String> pokemonEvolutionChain = getJson(
+                        webClient1,
+                        speciesJsonObj.getJSONObject("evolution_chain").getString("url"),
+                        MediaType.ALL
+                );
+                JSONObject evolutionChainJsonObj = new JSONObject(pokemonEvolutionChain.share().block());
+
+
+                JSONArray flavorArray = speciesJsonObj.getJSONArray("flavor_text_entries");
                 for (int j = flavorArray.length() - 1; j >= 0; j--) {
                     JSONObject jsonFlavor = getObjects(flavorArray, j);
                     if (jsonFlavor.getJSONObject("language").getString("name").equals("en")) {
@@ -124,6 +134,8 @@ public class PokemonConfig implements CommandLineRunner {
                         break;
                     }
                 }
+
+                pokemonSpecies.setPokemon(pokemon);
 
                 // Adiciona habilidades à classe PokemonAbilities caso ainda não tenha sido adicionada
                 // em seguida adiciona a habilidade à classe Pokemon
