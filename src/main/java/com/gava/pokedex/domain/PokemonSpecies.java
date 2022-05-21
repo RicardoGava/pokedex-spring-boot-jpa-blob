@@ -11,6 +11,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -39,9 +40,8 @@ public class PokemonSpecies implements Serializable {
     @JsonProperty("evolves-from")
     private String evolvesFrom;
     @JsonProperty("evolves-to")
-    @Setter(AccessLevel.NONE)
     @ElementCollection
-    private Set<String> evolvesTo;
+    private Set<String> evolvesTo = new HashSet<>();
     @JsonIgnore
     @OneToOne
     @MapsId

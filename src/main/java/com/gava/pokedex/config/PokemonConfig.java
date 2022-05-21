@@ -24,7 +24,9 @@ import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 public class PokemonConfig implements CommandLineRunner {
@@ -77,11 +79,13 @@ public class PokemonConfig implements CommandLineRunner {
 
                 // Adiciona os Types à classe Pokemon
                 JSONArray typesArray = pokemonJsonObj.getJSONArray("types");
-                for (Object obj : typesArray) {
-                    JSONObject jsonTypes = (JSONObject) obj;
+                int[] types = new int[typesArray.length()];
+                for (int j = 0; j < typesArray.length(); j++) {
+                    JSONObject jsonTypes = (JSONObject) typesArray.get(j);
                     Type type = Type.valueOf(jsonTypes.getJSONObject("type").getString("name").toUpperCase());
-                    pokemon.addType(type);
+                    types[j] = type.getCode();
                 }
+                pokemon.setTypes(types);
 
                 // Começa a captura da imagem SVG do Pokemon como String
                 Mono<String> svg = getJson(
@@ -121,10 +125,15 @@ public class PokemonConfig implements CommandLineRunner {
                 Mono<String> pokemonEvolutionChain = getJson(
                         webClient1,
                         speciesJsonObj.getJSONObject("evolution_chain").getString("url"),
-                        MediaType.ALL
+                        MediaType.APPLICATION_JSON
                 );
+
                 JSONObject evolutionChainJsonObj = new JSONObject(pokemonEvolutionChain.share().block());
 
+                JSONArray evolutionsArray = searchEvolution(evolutionChainJsonObj.getJSONObject("chain")
+                        , pokemonJsonObj.getString("name"));
+
+                pokemonSpecies.setEvolvesTo(getEvolutionsNames(evolutionsArray));
 
                 JSONArray flavorArray = speciesJsonObj.getJSONArray("flavor_text_entries");
                 for (int j = flavorArray.length() - 1; j >= 0; j--) {
@@ -213,5 +222,29 @@ public class PokemonConfig implements CommandLineRunner {
                 .bodyToMono(String.class)
                 .timeout(Duration.ofSeconds(10))
                 .onErrorMap(ReadTimeoutException.class, ex -> new HttpTimeoutException("ReadTimeout"));
+    }
+
+    private static JSONArray searchEvolution(JSONObject pokemonEvolutionChain, String pokemonName) {
+        if (pokemonEvolutionChain.get("evolves_to").equals(null)) {
+            return null;
+        } else if (pokemonEvolutionChain.getJSONObject("species").getString("name").equals(pokemonName)) {
+            return pokemonEvolutionChain.getJSONArray("evolves_to");
+        } else {
+            for (Object obj : pokemonEvolutionChain.getJSONArray("evolves_to")) {
+                return searchEvolution((JSONObject) obj, pokemonName);
+            }
+        }
+        return null;
+    }
+
+    private static Set<String> getEvolutionsNames(JSONArray evolvesToArray) {
+        Set<String> evolutions = new HashSet<>();
+        if (evolvesToArray != null) {
+            for (Object obj : evolvesToArray) {
+                JSONObject jsonEvolution = (JSONObject) obj;
+                evolutions.add(jsonEvolution.getJSONObject("species").getString("name"));
+            }
+        }
+        return evolutions;
     }
 }

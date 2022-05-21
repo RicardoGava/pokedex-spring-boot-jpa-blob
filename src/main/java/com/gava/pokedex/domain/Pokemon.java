@@ -30,9 +30,10 @@ public class Pokemon implements Serializable {
     private Double height;
     @Column(precision = 5, scale = 1)
     private Double weight;
-    @Setter(AccessLevel.NONE)
     @ElementCollection
-    private Set<Type> types = new LinkedHashSet<>();
+    @OrderColumn(name = "slot")
+    @OrderBy("slot")
+    private int[] types;
     @JsonIgnore
     private Blob img;
     @OneToOne(mappedBy = "pokemon", cascade = CascadeType.ALL)
@@ -47,8 +48,12 @@ public class Pokemon implements Serializable {
     @Setter(AccessLevel.NONE)
     private Set<PokemonAbility> abilities = new LinkedHashSet<>();
 
-    public void addType(Type type) {
-        this.types.add(type);
+    public Type[] getTypes() {
+        Type[] types = new Type[this.types.length];
+        for (int i = 0; i < types.length; i++) {
+            types[i] = Type.valueOf(this.types[i]);
+        }
+        return types;
     }
 
     public void addAbility(PokemonAbility pokemonAbility) {
