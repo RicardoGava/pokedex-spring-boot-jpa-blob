@@ -109,11 +109,14 @@ public class PokemonConfig implements CommandLineRunner {
 
                 // Adiciona as informações da espécie à classe Pokemon
                 PokemonSpecies pokemonSpecies = new PokemonSpecies();
+                pokemonSpecies.setColor(speciesJsonObj.getJSONObject("color").getString("name"));
+                pokemonSpecies.setShape(speciesJsonObj.getJSONObject("shape").getString("name"));
                 pokemonSpecies.setBaseHappiness(speciesJsonObj.getInt("base_happiness"));
                 pokemonSpecies.setBaseExperience(pokemonJsonObj.getInt("base_experience"));
                 pokemonSpecies.setCaptureRate(speciesJsonObj.getInt("capture_rate"));
-                pokemonSpecies.setColor(speciesJsonObj.getJSONObject("color").getString("name"));
-                pokemonSpecies.setShape(speciesJsonObj.getJSONObject("shape").getString("name"));
+                pokemonSpecies.setIsBaby(speciesJsonObj.getBoolean("is_baby"));
+                pokemonSpecies.setIsLegendary(speciesJsonObj.getBoolean("is_legendary"));
+                pokemonSpecies.setIsMythical(speciesJsonObj.getBoolean("is_mythical"));
                 pokemonSpecies.setGenus(getObjects(speciesJsonObj
                         .getJSONArray("genera"), 7).getString("genus"));
 
@@ -130,8 +133,8 @@ public class PokemonConfig implements CommandLineRunner {
 
                 JSONObject evolutionChainJsonObj = new JSONObject(pokemonEvolutionChain.share().block());
 
-                JSONArray evolutionsArray = searchEvolution(evolutionChainJsonObj.getJSONObject("chain")
-                        , pokemonJsonObj.getString("name"));
+                JSONArray evolutionsArray = searchEvolution(evolutionChainJsonObj.getJSONObject("chain"),
+                        pokemonJsonObj.getString("name"));
 
                 pokemonSpecies.setEvolvesTo(getEvolutionsNames(evolutionsArray));
 
@@ -242,7 +245,7 @@ public class PokemonConfig implements CommandLineRunner {
         if (evolvesToArray != null) {
             for (Object obj : evolvesToArray) {
                 JSONObject jsonEvolution = (JSONObject) obj;
-                evolutions.add(jsonEvolution.getJSONObject("species").getString("name"));
+                evolutions.add(capitalize(jsonEvolution.getJSONObject("species").getString("name")));
             }
         }
         return evolutions;

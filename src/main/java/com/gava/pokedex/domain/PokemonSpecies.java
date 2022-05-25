@@ -18,7 +18,8 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@JsonPropertyOrder({"flavor-text", "genus", "shape", "color", "capture-rate", "base-happiness", "base-experience"})
+@JsonPropertyOrder({"flavor-text", "genus", "shape", "color", "capture-rate", "base-happiness", "base-experience",
+        "is-baby", "is-legendary", "is-mythical", "evolves-from", "evolves-to"})
 public class PokemonSpecies implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -37,6 +38,12 @@ public class PokemonSpecies implements Serializable {
     private Integer baseHappiness;
     @JsonProperty("base-experience")
     private Integer baseExperience;
+    @JsonProperty("is-baby")
+    private Boolean isBaby;
+    @JsonProperty("is-legendary")
+    private Boolean isLegendary;
+    @JsonProperty("is-mythical")
+    private Boolean isMythical;
     @JsonProperty("evolves-from")
     private String evolvesFrom;
     @JsonProperty("evolves-to")
