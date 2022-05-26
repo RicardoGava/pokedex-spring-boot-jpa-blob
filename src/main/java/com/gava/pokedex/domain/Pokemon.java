@@ -2,8 +2,6 @@ package com.gava.pokedex.domain;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIncludeProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gava.pokedex.domain.enums.Type;
 import lombok.*;
 
@@ -18,6 +16,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@JsonFilter("PokemonFilter")
 public class Pokemon implements Serializable {
     private static final long serialVersionUID = 1L;
 

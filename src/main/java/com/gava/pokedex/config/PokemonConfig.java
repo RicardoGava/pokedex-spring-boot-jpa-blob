@@ -41,35 +41,23 @@ public class PokemonConfig implements CommandLineRunner {
     PokemonAbilityRepository pokemonAbilityRepository;
 
     @Autowired
-    WebClient webClient1;
-
-    @Autowired
-    WebClient webClient2;
+    WebClient webClient;
 
     @Override
     public void run(String... args) throws Exception {
 
-        if (pokemonRepository.findAll().isEmpty() == true) {
+        if (pokemonRepository.findAll().isEmpty()) {
             List<Pokemon> pokemonsList = new ArrayList<>();
 
             for (int i = 1; i <= limit; i++) {
                 Pokemon pokemon = new Pokemon();
 
-                // Começa a captura do JSON do Pokemon
+                // Captura do JSON do Pokemon
                 Mono<String> pokemonMono = getJson(
-                        webClient1,
+                        webClient,
                         "https://pokeapi.co/api/v2/pokemon/" + i,
                         MediaType.APPLICATION_JSON
                 );
-
-                // Começa a captura do JSON da espécie do Pokemon
-                Mono<String> speciesMono = getJson(
-                        webClient2,
-                        "https://pokeapi.co/api/v2/pokemon-species/" + i,
-                        MediaType.APPLICATION_JSON
-                );
-
-                // Bloqueia e finaliza a captura do JSON do Pokemon
                 JSONObject pokemonJsonObj = new JSONObject(pokemonMono.share().block());
 
                 // Adiciona as informações à classe Pokemon
@@ -87,9 +75,9 @@ public class PokemonConfig implements CommandLineRunner {
                 }
                 pokemon.setTypes(types);
 
-                // Começa a captura da imagem SVG do Pokemon como String
+                // Captura da imagem SVG do Pokemon como String
                 Mono<String> svg = getJson(
-                        webClient1,
+                        webClient,
                         pokemonJsonObj
                                 .getJSONObject("sprites")
                                 .getJSONObject("other")
@@ -97,14 +85,17 @@ public class PokemonConfig implements CommandLineRunner {
                                 .getString("front_default"),
                         MediaType.ALL
                 );
-
-                // Bloqueia e finaliza a captura da imagem SVG como String
                 pokemon.setImg(new SerialBlob(svg.share().block().getBytes(StandardCharsets.UTF_8)));
 
                 // Salva a classe Pokemon para criar um ID no repositório
                 pokemonRepository.save(pokemon);
 
-                // Bloqueia e finaliza a captura do JSON da espécie do Pokemon
+                // Captura do JSON da espécie do Pokemon
+                Mono<String> speciesMono = getJson(
+                        webClient,
+                        "https://pokeapi.co/api/v2/pokemon-species/" + i,
+                        MediaType.APPLICATION_JSON
+                );
                 JSONObject speciesJsonObj = new JSONObject(speciesMono.share().block());
 
                 // Adiciona as informações da espécie à classe Pokemon
@@ -125,17 +116,19 @@ public class PokemonConfig implements CommandLineRunner {
                             .getJSONObject("evolves_from_species").getString("name")));
                 }
 
+                // Captura a chave de evolução do Pokemon
                 Mono<String> pokemonEvolutionChain = getJson(
-                        webClient1,
+                        webClient,
                         speciesJsonObj.getJSONObject("evolution_chain").getString("url"),
                         MediaType.APPLICATION_JSON
                 );
-
                 JSONObject evolutionChainJsonObj = new JSONObject(pokemonEvolutionChain.share().block());
 
+                // Procura o nível da chave em que o Pokemon está e retorna o array com as possíveis evoluções
                 JSONArray evolutionsArray = searchEvolution(evolutionChainJsonObj.getJSONObject("chain"),
                         pokemonJsonObj.getString("name"));
 
+                // Passa os nomes contidos no array com possíveis evoluções para a classe PokemonSpecies
                 pokemonSpecies.setEvolvesTo(getEvolutionsNames(evolutionsArray));
 
                 JSONArray flavorArray = speciesJsonObj.getJSONArray("flavor_text_entries");
@@ -146,7 +139,6 @@ public class PokemonConfig implements CommandLineRunner {
                         break;
                     }
                 }
-
                 pokemonSpecies.setPokemon(pokemon);
 
                 // Adiciona habilidades à classe PokemonAbilities caso ainda não tenha sido adicionada
@@ -161,7 +153,7 @@ public class PokemonConfig implements CommandLineRunner {
                         pokemonAbility.setName(jsonAbilities.getJSONObject("ability").getString("name"));
                         pokemonAbility.setHidden(jsonAbilities.getBoolean("is_hidden"));
                         Mono<String> abilityMono = getJson(
-                                webClient2,
+                                webClient,
                                 jsonAbilities.getJSONObject("ability").getString("url"),
                                 MediaType.APPLICATION_JSON
                         );
