@@ -1,11 +1,9 @@
 package com.gava.pokedex.config;
 
-import com.gava.pokedex.domain.Pokemon;
-import com.gava.pokedex.domain.PokemonAbility;
-import com.gava.pokedex.domain.PokemonSpecies;
-import com.gava.pokedex.domain.PokemonStats;
+import com.gava.pokedex.domain.*;
 import com.gava.pokedex.domain.enums.Type;
 import com.gava.pokedex.repositories.PokemonAbilityRepository;
+import com.gava.pokedex.repositories.PokemonImageRepository;
 import com.gava.pokedex.repositories.PokemonRepository;
 import io.netty.handler.timeout.ReadTimeoutException;
 import org.json.JSONArray;
@@ -23,10 +21,7 @@ import javax.sql.rowset.serial.SerialBlob;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Configuration
 public class PokemonConfig implements CommandLineRunner {
@@ -35,13 +30,16 @@ public class PokemonConfig implements CommandLineRunner {
     private int limit;
 
     @Autowired
-    PokemonRepository pokemonRepository;
+    private PokemonRepository pokemonRepository;
 
     @Autowired
-    PokemonAbilityRepository pokemonAbilityRepository;
+    private PokemonAbilityRepository pokemonAbilityRepository;
 
     @Autowired
-    WebClient webClient;
+    private PokemonImageRepository pokemonImageRepository;
+
+    @Autowired
+    private WebClient webClient;
 
     @Override
     public void run(String... args) throws Exception {
@@ -85,7 +83,9 @@ public class PokemonConfig implements CommandLineRunner {
                                 .getString("front_default"),
                         MediaType.ALL
                 );
-                pokemon.setImg(new SerialBlob(svg.share().block().getBytes(StandardCharsets.UTF_8)));
+                PokemonImage pokemonImage = new PokemonImage(new SerialBlob(Objects.requireNonNull(svg.share().block())
+                        .getBytes(StandardCharsets.UTF_8)));
+                pokemonImageRepository.save(pokemonImage);
 
                 // Salva a classe Pokemon para criar um ID no repositório
                 pokemonRepository.save(pokemon);

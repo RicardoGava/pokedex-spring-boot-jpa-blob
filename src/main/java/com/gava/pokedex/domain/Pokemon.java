@@ -15,14 +15,12 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @JsonFilter("PokemonFilter")
 public class Pokemon implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     private Long id;
     private String name;
     @Column(precision = 5, scale = 1)
@@ -33,8 +31,6 @@ public class Pokemon implements Serializable {
     @OrderColumn(name = "slot")
     @OrderBy("slot")
     private int[] types;
-    @JsonIgnore
-    private Blob img;
     @OneToOne(mappedBy = "pokemon", cascade = CascadeType.ALL)
     private PokemonSpecies species;
     @OneToOne(mappedBy = "pokemon", cascade = CascadeType.ALL)
