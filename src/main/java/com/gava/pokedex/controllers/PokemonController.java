@@ -22,8 +22,8 @@ public class PokemonController {
     private PokemonService service;
 
     @SneakyThrows
-    @GetMapping(value = "{id}")
-    public ResponseEntity<String> findByIdFiltered(@PathVariable Long id,
+    @GetMapping(value = "{nameOrId}")
+    public ResponseEntity<String> findPokemon(@PathVariable String nameOrId,
                                                    @RequestParam(required = false) Boolean species,
                                                    @RequestParam(required = false) Boolean abilities,
                                                    @RequestParam(required = false) Boolean stats,
@@ -47,7 +47,7 @@ public class PokemonController {
         ObjectMapper om = new ObjectMapper();
         om.setFilterProvider(sfp);
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                .body(om.writeValueAsString(service.findById(id)));
+                .body(om.writeValueAsString(service.findById(nameOrId)));
     }
 
 }
