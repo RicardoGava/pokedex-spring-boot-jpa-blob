@@ -1,13 +1,11 @@
 package com.gava.pokedex.domain;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.gava.pokedex.domain.enums.Type;
 import lombok.*;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.sql.Blob;
 import java.util.LinkedHashSet;
 import java.util.Set;
 

@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -18,12 +17,7 @@ public class PokemonService {
     private PokemonRepository repository;
 
     @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
-    public List<Pokemon> findAll() {
-        return repository.findAll();
-    }
-
-    @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
-    public Pokemon findById(String nameOrId) {
+    public Pokemon findByNameOrId(String nameOrId) {
         Optional<Pokemon> obj;
         if (isLong(nameOrId)) {
             obj = repository.findById(Long.parseLong(nameOrId));

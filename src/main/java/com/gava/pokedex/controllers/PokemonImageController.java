@@ -25,9 +25,13 @@ public class PokemonImageController {
     private PokemonImageService service;
 
     @GetMapping(value = "{id}")
-    public ResponseEntity<String> findImgById(@PathVariable Long id) throws SQLException {
-        PokemonImage obj = service.findById(id);
-        String img = new String(obj.getImg().getBytes(1, (int) obj.getImg().length()));
-        return ResponseEntity.ok().contentType(MediaType.valueOf("image/svg+xml")).body(img);
+    public ResponseEntity<String> findByIdParamHandler(
+            @PathVariable Long id,
+            @RequestParam(required = false) String fillColor
+    ) {
+        return ResponseEntity.ok().contentType(MediaType.valueOf("image/svg+xml"))
+                .body(service.findByIdParamHandler(id, fillColor));
     }
+
+
 }
