@@ -27,11 +27,11 @@ public class PokemonImageController {
     @GetMapping(value = "{id}")
     public ResponseEntity<String> findByIdParamHandler(
             @PathVariable Long id,
-            @RequestParam(required = false) String fillColor
+            @RequestParam(required = false) String fillColor,
+            @RequestParam(required = false) String width,
+            @RequestParam(required = false) String height
     ) {
         return ResponseEntity.ok().contentType(MediaType.valueOf("image/svg+xml"))
-                .body(service.findByIdParamHandler(id, fillColor));
+                .body(service.findByIdParamHandler(id, fillColor, width, height));
     }
-
-
 }

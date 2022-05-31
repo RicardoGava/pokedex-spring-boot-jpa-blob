@@ -32,7 +32,7 @@ public class PokemonService {
             return false;
         }
         try {
-            double d = Long.parseLong(strNum);
+            long l = Long.parseLong(strNum);
         } catch (NumberFormatException nfe) {
             return false;
         }
