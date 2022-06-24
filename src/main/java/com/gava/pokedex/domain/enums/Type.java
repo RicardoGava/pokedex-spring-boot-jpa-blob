@@ -21,7 +21,7 @@ public enum Type {
     STEEL(17),
     WATER(18);
 
-    private int code;
+    private final int code;
 
     Type(int code) {
         this.code = code;
@@ -38,8 +38,10 @@ public enum Type {
         }
         throw new IllegalArgumentException("Invalid Type code");
     }
-    
-    public Type[] weak, strong, noEffect;
+
+    private Type[] weak;
+    private Type[] strong;
+    private Type[] noEffect;
 
     static {
         // None to avoid null reference errors

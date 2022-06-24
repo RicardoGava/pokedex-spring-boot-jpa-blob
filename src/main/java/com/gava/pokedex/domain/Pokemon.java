@@ -42,11 +42,11 @@ public class Pokemon implements Serializable {
     private Set<PokemonAbility> abilities = new LinkedHashSet<>();
 
     public Type[] getTypes() {
-        Type[] types = new Type[this.types.length];
-        for (int i = 0; i < types.length; i++) {
-            types[i] = Type.valueOf(this.types[i]);
+        Type[] typesNamed = new Type[this.types.length];
+        for (int i = 0; i < typesNamed.length; i++) {
+            typesNamed[i] = Type.valueOf(this.types[i]);
         }
-        return types;
+        return typesNamed;
     }
 
     public void addAbility(PokemonAbility pokemonAbility) {

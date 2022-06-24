@@ -45,8 +45,6 @@ public class PokemonConfig implements CommandLineRunner {
     public void run(String... args) throws Exception {
 
         if (pokemonRepository.findAll().isEmpty()) {
-            List<Pokemon> pokemonsList = new ArrayList<>();
-
             for (int i = 1; i <= limit; i++) {
                 Pokemon pokemon = new Pokemon();
 
@@ -111,7 +109,7 @@ public class PokemonConfig implements CommandLineRunner {
                 pokemonSpecies.setGenus(getObjects(speciesJsonObj
                         .getJSONArray("genera"), 7).getString("genus"));
 
-                if (!speciesJsonObj.get("evolves_from_species").equals(null)) {
+                if (speciesJsonObj.get("evolves_from_species") != null) {
                     pokemonSpecies.setEvolvesFrom(capitalize(speciesJsonObj
                             .getJSONObject("evolves_from_species").getString("name")));
                 }
@@ -212,7 +210,7 @@ public class PokemonConfig implements CommandLineRunner {
         return webClient
                 .method(HttpMethod.GET)
                 .uri(uri)
-                .accept(MediaType.APPLICATION_JSON)
+                .accept(mediaType)
                 .retrieve()
                 .bodyToMono(String.class)
                 .timeout(Duration.ofSeconds(10))
@@ -220,7 +218,7 @@ public class PokemonConfig implements CommandLineRunner {
     }
 
     private static JSONArray searchEvolution(JSONObject pokemonEvolutionChain, String pokemonName) {
-        if (pokemonEvolutionChain.get("evolves_to").equals(null)) {
+        if (pokemonEvolutionChain.get("evolves_to") == null) {
             return null;
         } else if (pokemonEvolutionChain.getJSONObject("species").getString("name").equals(pokemonName)) {
             return pokemonEvolutionChain.getJSONArray("evolves_to");

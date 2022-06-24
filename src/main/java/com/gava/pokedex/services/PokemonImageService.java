@@ -41,7 +41,7 @@ public class PokemonImageService {
         return img;
     }
 
-    private static Boolean checkColor(String color) {
+    private static boolean checkColor(String color) {
         return color != null && color.matches("^[0-9a-fA-F]+$") && (color.length() == 3 || color.length() == 6);
     }
 
@@ -50,7 +50,7 @@ public class PokemonImageService {
             return null;
         }
         try {
-            int i = Integer.parseInt(strNum);
+            Integer.parseInt(strNum);
         } catch (NumberFormatException nfe) {
             return null;
         }
